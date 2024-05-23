@@ -5,11 +5,12 @@ const HOSTNAME = "127.0.0.1";
 const PORT = 3001;
 const start = () => createServer();
 
-instance.contentType = setHeaders
-instance.get = sharedfunction(status, () => {
-    
-})
-instance.post = sharedfunction
+// IDEAs for integrating and making code re-usable (same approach as expressJs)
+// instance.contentType = setHeaders
+// instance.get = sharedfunction(status, () => {
+
+// })
+// instance.post = sharedfunction
 
 // All requests are passed through here
 instance.addListener('request', (req, res) => {

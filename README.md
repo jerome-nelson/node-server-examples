@@ -10,8 +10,8 @@ Folder containing quick mock ups for requirement gathering
 ### Node.JS Server Examples
 
 - [x] Basic Server 
-- [x] Create a http server with endpoints for GET, POST 
-    - [ ] Other methods would be the same logic
+- [] Create a http server with endpoints for GET, POST <-- Currently in progress
+    - Other methods would be the same logic
 - [ ] Add tests to cover functionality (tests must be kept maintained throughout project) <-- Currently in progress
 - [ ] Implement a domain block/CORs
 - [ ] Convert to Typescript

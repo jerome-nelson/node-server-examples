@@ -1,4 +1,4 @@
-const { basicServer } = require("./basic");
+const { basicServer } = require("./server");
 
 // remove console log assertions
 console.log = (_msg) => { return; }

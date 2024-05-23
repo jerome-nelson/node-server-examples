@@ -1,20 +1,39 @@
 const { basicServer } = require("./basic");
 
-function assert(assert, instance) {
-    return function (expected) {
-        console.log(assert, expected(done, instance))
-    }
-}
+// remove console log assertions
+console.log = (_msg) => { return; }
 
 const HOSTNAME = "127.0.0.1";
-const PORT = 4002
+const PORT = 4002;
+const TEST_SERVER = basicServer(HOSTNAME, PORT);
 
-assert(`Server should be running on ${HOSTNAME}:${PORT}`, basicServer(HOSTNAME, PORT))(done, instance => {
+function assertServer(assert) {
+    let finished, result;
+    const done = (assert) => {
+        finished = true;
+        result = assert;
+    }
 
+    const waitForResult = function (instance, done, cb) {
+        cb(instance, done);
+
+        const timeout = setInterval(() => {
+            if (finished) {
+                clearInterval(timeout);
+                console.info(`\n* ${assert}: ${result}`,);
+                instance.close();
+                return;
+            }
+        }, 0);
+    }
+    return waitForResult.bind(null, TEST_SERVER, done);
+}
+
+assertServer(`Server should be running on ${HOSTNAME}:${PORT}`)((instance, done) => {
     instance.addListener("listening", () => {
-       if(instance.listening === true) {
-        // Add promise
-        done();
-       }
+        if (instance.listening === true) {
+            done(instance.listening === true);
+        }
     })
 });
+

@@ -11,6 +11,10 @@ const basicServer = (HOSTNAME = "127.0.0.1", PORT = 3001) => {
         console.log(`Server running at http://${HOSTNAME}:${PORT}/`);
     });
 
+    server.addListener('close', () => {
+        console.log(`Server closed`)
+    })
+
     return server;
 };
 

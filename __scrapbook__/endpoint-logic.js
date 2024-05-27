@@ -3,7 +3,11 @@ const { createServer } = require("node:http");
 // Idea: Is there a way to automatically assign a port here instead
 const HOSTNAME = "127.0.0.1";
 const PORT = 3001;
-const start = () => createServer();
+const start = () => createServer((_, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end(`Basic Server implementation`);
+});
+const instance = start();
 
 // IDEAs for integrating and making code re-usable (same approach as expressJs)
 // instance.contentType = setHeaders
@@ -14,7 +18,7 @@ const start = () => createServer();
 
 // All requests are passed through here
 instance.addListener('request', (req, res) => {
-
+    console.log("Request fired: ", req.url);
     // Problem: Code Smell (since routes are defined manually, code bloat can be increased here)
     if (req.url === '/get') {
         if (req.method.toLowerCase() === "get") {

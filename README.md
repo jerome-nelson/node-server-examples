@@ -39,4 +39,7 @@ Folder containing quick mock ups for requirement gathering
 2. Review remaining comments
 
 
+## Reading Materials
+1. (What is a socket)[https://www.reddit.com/r/learnprogramming/comments/12ifgcf/what_is_a_socket_what_does_it_mean_that_a/]
+
 ### DONE!!

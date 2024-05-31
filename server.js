@@ -1,29 +1,28 @@
 const { createServer } = require("node:http");
 
-const setupRoutes = (server) => {
+const basicServer = (HOSTNAME = "127.0.0.1", PORT = 3001) => {
+    const routeConfig = {};
     const defaultOptions = {
         method: 'GET',
         'Content-Type': 'application/json',
         status: 200
     }
-
-    return {
-        // TODO: Is this performant or there a major cost to adding listeners for each endpoint
-        addRoute: (url, data, options = defaultOptions) => {
-            server.on('request', (request, res) => {
-                if (request.url === url && request.method === options.method) {
-                    res.writeHead(options.status, { 'Content-Type': options['Content-Type'] });
-                    res.end(JSON.stringify({ data }));
-                }
-            });
+    const server = createServer((req, res) => {
+        if (!routeConfig[req.url]) {
+            res.writeHead(200, { 'Content-Type': 'text/plain' });
+            res.end(`Basic Server`);
+            return;
         }
-    }
-}
 
-const basicServer = (HOSTNAME = "127.0.0.1", PORT = 3001) => {
-    const server = createServer((_, res) => {
-        res.writeHead(200, { 'Content-Type': 'text/plain' });
-        res.end(`Basic Server`);
+        if (!routeConfig[req.url].method) {
+            console.info("Needs a method");
+            return;
+        }
+      
+        res.writeHead(routeConfig[req.url]['status'], { 'Content-Type': routeConfig[req.url]['Content-Type'] });
+        res.end(routeConfig[req.url]['data']);
+
+
     });
 
     server.listen(PORT, HOSTNAME, () => {
@@ -34,11 +33,17 @@ const basicServer = (HOSTNAME = "127.0.0.1", PORT = 3001) => {
         console.log(`Server closed`)
     })
 
-    const { addRoute } = setupRoutes(server);
 
     return {
         server,
-        addRoute
+        addRoute: (url, data = {}, options) => {
+            routeConfig[url] = { 
+                data, 
+                method: options?.method || defaultOptions['method'], 
+                status: options?.status || defaultOptions['status'],
+                'Content-Type': options?.['Content-Type'] || defaultOptions['Content-Type']
+            }
+        }
     };
 };
 

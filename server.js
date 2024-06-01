@@ -14,15 +14,15 @@ const basicServer = (HOSTNAME = "127.0.0.1", PORT = 3001) => {
             return;
         }
 
-        if (!routeConfig[req.url].method) {
-            console.info("Needs a method");
+        if (routeConfig[req.url]?.method !== req.method) {
+            res.writeHead(405, { 'Content-Type': 'text/plain' });
+            res.end(`Method not allowed`);
             return;
         }
+
       
         res.writeHead(routeConfig[req.url]['status'], { 'Content-Type': routeConfig[req.url]['Content-Type'] });
         res.end(routeConfig[req.url]['data']);
-
-
     });
 
     server.listen(PORT, HOSTNAME, () => {

@@ -14,7 +14,7 @@ Folder containing quick mock ups for requirement gathering
 - HTTP
     - [x] Basic Server 
     - [x] Create a http server with endpoints for GET, POST
-    - [ ] Add CORS option
+    - [ ] Add CORS option <-- in progress
         - Simple Global domain and method block for now
             * LATER STEPS: Credentials and Route-based cors
     - [ ] Add gzip (compression) option to requests / look for options to add others

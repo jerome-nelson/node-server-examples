@@ -22,3 +22,20 @@ Isn't needed either until working on HTTPS connections
 ### CORS
 1. Simple whitelist served via Headers to allow/disallow requests based on origin
     - Can trigger a Preflight request if request is not deemed "simple" (MDN has the rules for that)
+
+#### CORS Flow
+(SPEC Here)[https://fetch.spec.whatwg.org/#cors-preflight-request]
+1. If not set - remove header
+2. If set:
+    - Add comma-delimited domains
+    - OR asterisk
+    - If either is set then add a default access-allowed-methods header
+        * POST/GET should be set as default allowed (these are the default allowed methods that don't require preflights)
+    - If access-allowed-methods is already set then ignore the above
+        * Verify that the methods are Node.JS compatible by checking against http module allowed methods
+            - If not then throw error and quit server process
+3. When request is made
+    - If simple request (all requests on the same domain as server OR different domain with no extra added HTTP headers*/requests other than POST/GET)
+        * There are exceptions to HTTP Headers as well
+    - If Preflight required:
+        * OPTIONS request is made first

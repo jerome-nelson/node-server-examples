@@ -52,5 +52,5 @@ Folder containing quick mock ups for requirement gathering
 3. (CORS)[https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS]
     i. (Express CORS Plugin)[https://github.com/expressjs/cors/blob/master/lib/index.js] (Nice companion to MDN article)
 4. (Common MIME Types)[https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types]
-
+5. (CORS Flow Chart)[https://www.html5rocks.com/static/images/cors_server_flowchart.png]
 ### DONE!!

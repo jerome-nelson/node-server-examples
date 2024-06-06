@@ -18,6 +18,7 @@ Folder containing quick mock ups for requirement gathering
         - Simple Global domain and method block for now
             * LATER STEPS: Credentials and Route-based cors
     - [ ] Add gzip (compression) option to requests / look for options to add others
+    - [ ] Setup and make a deployment of server and code via CI
 - [ ] Add a Logger
 - [ ] Add HTTPS
 - [ ] Setup up WebSocket 

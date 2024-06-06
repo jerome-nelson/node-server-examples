@@ -24,6 +24,11 @@ Isn't needed either until working on HTTPS connections
     - Can trigger a Preflight request if request is not deemed "simple" (MDN has the rules for that)
 
 #### CORS Flow
+Fetch requests:
+* NOTE: `no-cors` can be set on request and it will still be sent and given a response (with some kind of restrictions)
+(https://fetch.spec.whatwg.org/#concept-filtered-response)[Spec here]
+TODO: Investigate seperately (it's not clear what benefit/distinction/use-case for this is)
+
 (SPEC Here)[https://fetch.spec.whatwg.org/#cors-preflight-request]
 1. If not set - remove header
 2. If set:
@@ -39,3 +44,6 @@ Isn't needed either until working on HTTPS connections
         * There are exceptions to HTTP Headers as well
     - If Preflight required:
         * OPTIONS request is made first
+
+### Current conclusion
+CORs is a good way to consider the security implications needed to secure a server but since checks can be bypassed outside of the browser + the vagueness / open-ended interpretation for failures/successes seems redundant for developers (since this logic will be expanded on in the server logic anyway).

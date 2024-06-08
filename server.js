@@ -30,16 +30,8 @@ function enableCORS(request, { host, port, whitelist }) {
 
 
 const basicServer = (host = DEFAULT_HOSTNAME, port = DEFAULT_PORT) => {
-    const routeConfig = {
-        '/': {
-            data: `Basic Server`,
-            methods: ['GET'],
-            status: 200,
-            headers: {
-                'Content-Type': 'text/plain'
-            }
-        }
-    };
+   
+    const routeConfig = {};
     const defaultOptions = {
         methods: ['GET'],
         'Content-Type': 'application/json',
@@ -52,9 +44,7 @@ const basicServer = (host = DEFAULT_HOSTNAME, port = DEFAULT_PORT) => {
 
         if (enableCORS(req, { host, port, whitelist: ALLOWED_DOMAINS })) {
             // console.info("[CORS]: Enabled");            
-            const selectRequestedDomain = ALLOWED_DOMAINS.find(domain => {
-                return domain === (req.headers.origin ?? `http://${req.headers.host}`)
-            });
+            const selectRequestedDomain = ALLOWED_DOMAINS.find(domain => domain === (req.headers.origin ?? `http://${req.headers.host}`));
 
             // In case above check fails - there should be a fallback to current host server is on
             res.setHeader("Access-Control-Allow-Origin", selectRequestedDomain || `http://${host}:${port}`);
@@ -72,7 +62,8 @@ const basicServer = (host = DEFAULT_HOSTNAME, port = DEFAULT_PORT) => {
             }
 
             if (req.method === "OPTIONS") {
-                const routeNilMatchRequest = routeConfig?.[req?.url]?.methods && !(routeConfig?.[req?.url]?.methods || []).includes(req.headers['access-control-request-method']);
+                // Fetch specification doesn't distinguish OPTION failures
+                const routeNilMatchRequest = routeConfig[req?.url]?.methods && !(routeConfig[req.url]?.methods || []).includes(req.headers['access-control-request-method']);
                 if (
                     req.headers['access-control-request-method'] !== DEFAULT_UNSAFELISTED_HEADERS['Access-Control-Allow-Methods'] ||
                     routeNilMatchRequest

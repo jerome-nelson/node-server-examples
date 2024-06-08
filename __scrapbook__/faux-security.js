@@ -1,5 +1,8 @@
+// NOTE (08.06.2024)
+// I HATE HOW OPEN THE HTTP SPEC IS
+// In the case of security, opiniated well-TESTED approaches are the best
+
 const { createServer } = require("node:http");
-const process = require('node:process');
 
 //  REquirements:
 // 1. (OPTIONS Check is automatic)
@@ -55,9 +58,6 @@ function isValidCorsRequest(request) {
         ALLOWED_DOMAINS.includes(request.headers.origin) ||
         request.headers.host === HOSTNAME
     )
-        &&
-        // TODO: Temporary for now (review if good idea)
-        request.method !== "GET"
         &&
         (
             request.headers?.['sec-fetch-mode'] === 'cors' ||

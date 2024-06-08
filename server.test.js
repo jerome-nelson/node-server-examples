@@ -7,12 +7,16 @@ const HOSTNAME = "127.0.0.1";
 const PORT = 4002;
 const startServer = (hostname, port) => basicServer(hostname, port);
 
+// Need to review and refactor to consider async nature of calls
+//  1. each testSuite cb() should be run and finished before next one is started
+//  2. Server tests cannot be run more than two at a time due to connections still running whilst next server instance is being spun up
+//  3. Nice to have: Console formatting
+//  4. Nice to have: allow skipping of a whole spec by skipping here instead
 function testSuite(description, cb) {
     console.info(`\n# ${description}`);
     cb();
 }
 
-// TODO: Add a timeout
 function assertServer(assert, hostname = HOSTNAME, port = PORT) {
     const waitForResult = function (start, cb) {
         const checkIfSendCb = setTimeout(() => {
@@ -25,7 +29,7 @@ function assertServer(assert, hostname = HOSTNAME, port = PORT) {
 
             const done = (result, error = '') => {
                 // TODO: Remove tab-space and use smth like : console.group
-                console.info(`  * ${assert}: ${result} ${error ? `\n  - ERROR: ${error} \n` : ''}`);
+                console.info(`  * ${assert}: ${!!result} ${error ? `\n  - ERROR: ${error} \n` : ''}`);
                 instance.server.close();
             };
 
@@ -36,12 +40,11 @@ function assertServer(assert, hostname = HOSTNAME, port = PORT) {
     return waitForResult.bind(null, startServer.bind(null, hostname, port));
 }
 
-function makeRequest(path, { method, headers }, cb) {
+function makeRequest(path, { host, port, method, headers }, cb) {
     let rawData = '';
-    const req = http.request(`http://${HOSTNAME}:${PORT}${path}`, { method, headers: headers || {} }, res => {
+    const req = http.request(`http://${host ?? HOSTNAME}:${port ?? PORT}${path}`, { method, headers: headers || {} }, res => {
         res.setEncoding('utf8');
         res.on('data', (chunk) => { rawData += chunk; });
-        // TODO: Refactor this to consider http.ClientRequest instead
         res.on('end', () => {
             try {
                 cb(res, rawData);
@@ -80,11 +83,27 @@ testSuite("Base implementation", () => {
             done(false);
         });
     });
+});
 
-    // TODO: Works fine, but need to find solution for:
-    //  - ERROR: listen EADDRINUSE: address already in use 127.0.0.1:4002 
+testSuite("Routing", () => {
+    assertServer.skip(`Should respond with a 404 if route is not found`)((_, done) => {
+        makeRequest(`/test`, { method: "GET" }, (res, data) => {
+            done(res.statusCode === 404 && data === "Not Found");
+        });
+    });
+    assertServer.skip(`Should respond with a 405 if incorrect method is used`)((server, done) => {
+        server.addRoute(`/test`, 'oi', { method: "GET" });
+        makeRequest(`/test`, { method: "POST" }, (res, data) => {
+            if (res) {
+                const checkStatus = res.statusCode === 405 && data === 'Method not allowed';
+                done(checkStatus);
+                return;
+            }
+            done(false);
+        });
+    });
     assertServer.skip(`Server should be able to setup a GET route`)((instance, done) => {
-        instance.addRoute('/test', 'test-data', { method: 'GET' });
+        instance.addRoute('/test', 'test-data', { methods: ['GET'] });
         makeRequest(`/test`, { method: 'GET' }, (res, data) => {
             if (res && data) {
                 done(data === 'test-data');
@@ -104,32 +123,22 @@ testSuite("Base implementation", () => {
             done(false);
         });
     });
+
+    assertServer(`headers added to route should be included in response`)((server, done) => {
+        server.addRoute('/custom-route', 'testing', { methods: ["GET"], headers: { "X-PING": "PONG" } });
+        makeRequest(`/custom-route`, { method: "GET" }, (res) => {
+            done(res.statusCode === 200 && res.headers['x-ping'] === "PONG")
+        });
+    });
 });
 
 testSuite("CORS Integration", () => {
-
-    // TODO: Spoof request and see if it passes
-    // Check list:
-    // 1. If Origin is specified (not 100% reliable) / 
-    // 2. If HOST is not the same as the Server
-    // 3. If SEC_FETCH_MODE is set to 'cors'
-    // 4. IF SEC_FETCH_SITE is set to 'cross-site'
-
-    // const selectRequestedDomain = ALLOWED_DOMAINS.find(domain => domain === (req.headers.origin || `http://${req.headers.host}`));
-    // res.setHeader("Access-Control-Allow-Origin", selectRequestedDomain);
-
-    // // Access-Control-Expose-Headers - Not required but recommended
-    // res.setHeader("Access-Control-Expose-Headers", `${Object.keys(DEFAULT_UNSAFELISTED_HEADERS).join(",")}, Access-Control-Request-Method`);
-
-    // // Allow cookies - set via config
-    // res.setHeader('Access-Control-Allow-Credentials', true);
-
-    assertServer(`triggers if origin OR hostname match AND if http fetch headers are specific values`)((_, done) => {
+    assertServer.skip(`triggers if origin OR hostname match AND if http fetch headers are specific values`)((_, done) => {
         makeRequest(`/`, { method: "POST", headers: { host: `${HOSTNAME}:${PORT}`, 'sec-fetch-mode': 'cors' } }, res => {
             const expectedHeaders = {
                 "Access-Control-Allow-Origin": `http://${HOSTNAME}:${PORT}`,
                 "Access-Control-Allow-Credentials": "true",
-                "Access-Control-Expose-Headers": "Access-Control-Allow-Headers,Access-Control-Allow-Methods,Content-Security-Policy, Access-Control-Request-Method",
+                "Access-Control-Expose-Headers": "Access-Control-Allow-Headers,Access-Control-Allow-Methods,Content-Security-Policy,Access-Control-Request-Method",
                 'Access-Control-Allow-Headers': 'content-type',
                 'Access-Control-Allow-Methods': 'POST',
                 'Content-Security-Policy': "default-src 'self'"
@@ -145,19 +154,87 @@ testSuite("CORS Integration", () => {
         })
     });
 
-    assertServer.skip(`CORS: Should respond with a 405 if incorrect method is used`)((instance, done) => {
-        instance.addRoute('/test', 'test-data');
-        makeRequest(`/test`, { method: "POST" }, (res) => {
-            if (res) {
-                const checkStatus = res.statusCode === 405 && data === 'Method not allowed';
-                done(checkStatus);
-                return;
-            }
-            done(false);
-        });
+    // TODO: Valid test case but does the code reflect this?
+    assertServer.skip(`Access-Control-Origin should fallback to the current server host if no domains are whitelisted`, HOSTNAME, 4000)((_, done) => {
+        makeRequest(`/`, { port: 4000, method: "POST", headers: { host: `${HOSTNAME}:4000`, 'sec-fetch-mode': 'cors' } }, res => {
+            done(res.headers['access-control-allow-origin'] === "http://127.0.0.1:4000");
+        })
     });
 
-    // assertServer.skip(`Should respond with a CORS header IF specified`)((instance, done) => {
+    assertServer.skip('If origin is not in domain whitelist then domain that server is on should be used')((_, done) => {
+        makeRequest(`/`, {
+            method: "GET",
+            headers: {
+                'host': `${HOSTNAME}:${PORT}`,
+                'origin': `http://kubernetes.docker.internal:${PORT}`, // TODO: Research which one takes precedence? (origin or host)
+                'sec-fetch-mode': 'cors',
+                'sec-fetch-site': 'cross-site'
+            }
+        },
+            res => {
+                done(res.headers['access-control-allow-origin'] === `http://${HOSTNAME}:${PORT}`);
+            }
+        );
+    });
 
-    // });
-})
+    assertServer.skip('OPTIONS request method headers should match allowed methods AND route config')((server, done) => {
+        server.addRoute('/fake-post', JSON.stringify({}), { methods: ['POST'] });
+        makeRequest(`/fake-post`, {
+            method: "OPTIONS",
+            headers: {
+                'access-control-request-headers': 'content-type',
+                'access-control-request-method': 'POST',
+                'host': `${HOSTNAME}:${PORT}`,
+                'origin': `http://kubernetes.docker.internal:${PORT}`, // TODO: Research which one takes precedence? (origin or host)
+                'sec-fetch-mode': 'cors',
+                'sec-fetch-site': 'cross-site'
+            }
+        },
+            res => {
+                const hasCorrectHeader = res.headers['access-control-allow-methods'] === 'POST';
+                done(hasCorrectHeader && res.statusCode === 200);
+            }
+        );
+    });
+
+
+    // TODO: Uses base route - would be better if this used explicitly defined route
+    // TODO: Also implicitly the code uses nullish coalescence operator, so access-control-method header
+    // doesn't actually need to be defined at all for test to pass
+    assertServer.skip('OPTIONS request should return a 403 if requested route doesn\'t explicitly declare the method requested')((_, done) => {
+        makeRequest(`/`, {
+            method: "OPTIONS",
+            headers: {
+                'access-control-request-method': 'DELETE',
+                'host': `${HOSTNAME}:${PORT}`,
+                'origin': `http://kubernetes.docker.internal:${PORT}`, // TODO: Research which one takes precedence? (origin or host)
+                'sec-fetch-mode': 'cors',
+                'sec-fetch-site': 'cross-site'
+            }
+        },
+            res => {
+                done(res.statusCode === 403 && res.headers['content-length'] === '0');
+            }
+        );
+    });
+
+    assertServer.skip('OPTIONS request should also return a 403 if requested method is not allowed, even if route defines it')((server, done) => {
+        server.addRoute('/fake-delete', {}, { methods: [
+            'DELETE'
+        ]});
+        makeRequest(`/fake-delete`, {
+            method: "OPTIONS",
+            headers: {
+                'access-control-request-method': 'DELETE',
+                'host': `${HOSTNAME}:${PORT}`,
+                'origin': `http://kubernetes.docker.internal:${PORT}`, // TODO: Research which one takes precedence? (origin or host)
+                'sec-fetch-mode': 'cors',
+                'sec-fetch-site': 'cross-site'
+            }
+        },
+            res => {
+                done(res.statusCode === 403 && res.headers['content-length'] === '0');
+            }
+        );
+    });
+});

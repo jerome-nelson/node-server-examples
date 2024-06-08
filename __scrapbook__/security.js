@@ -48,11 +48,16 @@ const ROUTES = {
 // 2. If HOST is not the same as the Server
 // 3. If SEC_FETCH_MODE is set to 'cors'
 // 4. IF SEC_FETCH_SITE is set to 'cross-site'
+// 5. If the headers aren't standard
+
 function isValidCorsRequest(request) {
     return (
         ALLOWED_DOMAINS.includes(request.headers.origin) ||
         request.headers.host === HOSTNAME
     )
+        &&
+        // TODO: Temporary for now (review if good idea)
+        request.method !== "GET"
         &&
         (
             request.headers?.['sec-fetch-mode'] === 'cors' ||

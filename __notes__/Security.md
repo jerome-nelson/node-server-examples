@@ -47,3 +47,5 @@ TODO: Investigate seperately (it's not clear what benefit/distinction/use-case f
 
 ### Current conclusion
 CORs is a good way to consider the security implications needed to secure a server but since checks can be bypassed outside of the browser + the vagueness / open-ended interpretation for failures/successes seems redundant for developers (since this logic will be expanded on in the server logic anyway).
+
+* Doesn't auto-trigger server side if call is detected that fits CORS request 
